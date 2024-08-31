@@ -1,14 +1,29 @@
+export interface CustomError {
+  status_code: number;
+  detail: string
+  error_code?: number
+}
+
 export interface Bench {
     id: number;
+    name: string;
+    description: string;
     latitude: number;
     longitude: number;
-    // Add any other properties that a bench might have
+    count: number;
+  }
+
+  export interface BenchCreate {
+    name: string;
+    description: string;
+    latitude: number;
+    longitude: number;
+    count: number;
   }
   
   export interface User {
     id: number;
     email: string;
-    // Add any other user properties
   }
   
   export interface AuthState {
@@ -23,7 +38,6 @@ export interface Bench {
   }
   
   export interface RegisterCredentials extends LoginCredentials {
-    // Add any additional fields required for registration
   }
   
   export interface ApiResponse<T> {

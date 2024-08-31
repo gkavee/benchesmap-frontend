@@ -1,14 +1,14 @@
 'use client';
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { User } from '@/types';
-import { api, login as apiLogin, register as apiRegister, logout as apiLogout } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -17,32 +17,53 @@ export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    // Check if user is logged in on initial load
-    const checkAuth = async () => {
-      try {
-        const response = await api.get('/auth/me');
+  const checkAuth = useCallback(() => {
+    axios.get('/api/users/me')
+      .then(response => {
         setUser(response.data);
-      } catch (error) {
+      })
+      .catch(() => {
         setUser(null);
-      }
-    };
-    checkAuth();
+      });
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await apiLogin(email, password);
-    setUser(response.data.user);
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const login = (username: string, password: string) => {
+    return axios.post('/api/auth/jwt/login', { username, password })
+      .then(response => {
+        setUser(response.data.user);
+        checkAuth();
+      })
+      .catch(error => {
+        console.error('Login error:', error);
+        throw error;
+      });
   };
 
-  const register = async (email: string, password: string) => {
-    const response = await apiRegister(email, password);
-    setUser(response.data.user);
+  const register = (username: string, email: string, password: string) => {
+    return axios.post('/api/auth/register', { username, email, password })
+      .then(response => {
+        setUser(response.data.user);
+        checkAuth();
+      })
+      .catch(error => {
+        console.error('Register error:', error);
+        throw error;
+      });
   };
 
   const logout = () => {
-    apiLogout();
-    setUser(null);
+    axios.post('/api/auth/jwt/logout')
+      .then(() => {
+        setUser(null);
+      })
+      .catch(error => {
+        console.error('Logout error:', error);
+        throw error;
+      });
   };
 
   return (
